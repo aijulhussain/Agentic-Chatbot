@@ -71,10 +71,21 @@ class AINewsNode:
 
         articles_str = "\n\n".join([
             f"Content: {item.get('content', '')}\nURL: {item.get('url', '')}\nDate: {item.get('published_date', '')}"
-            for item in news_item:
+            for item in news_item
             
         ])
         response = self.llm.invoke(prompt_template.format(articles=articles_str))
         state['summary']=response.content
         self.state['summary']=state['summary']
         return self.state
+    
+
+    def save_result(self,state):
+        frequency = self.state['frequency']
+        summary = self.state['summary']
+        filename=f"./AINews/{frequency}_summary.md"
+        with open(filename, 'w') as f:
+            f.write(f"# {frequency.capitalize()} AI News Summary\n\n")
+            f.write(summary)
+        self.state['filename'] = filename
+        return filename
