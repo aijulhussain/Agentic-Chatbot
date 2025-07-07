@@ -1,5 +1,5 @@
 from tavily import TavilyClient
-from langchain_core.prompts import ChatPromptTemplat
+from langchain_core.prompts import ChatPromptTemplate
 
 
 class AINewsNode:
@@ -41,3 +41,40 @@ class AINewsNode:
         state['news_data']=response.get('results', [])
         self.state['news_data']=state['news_data']
         return state
+    
+
+    def summarize_news(self, state:dict)->dict:
+        """
+        Summarize the fetched news using an LLM.
+        
+        Args:
+            State (dict): The state dictionary containing 'news_data'.
+        
+        Returns:
+            dict: Updated state with 'summary' key containing the summarized news.
+        
+        """
+        news_item = self.state['news_data']
+
+        prompt_template = ChatPromptTemplate.from_messages([
+        ("system", """You are an assistant that summarizes AI news articles in markdown format. For each article:
+        - Use the date in **YYYY-MM-DD** format (IST timezone)
+        - Provide a concise summary in clear sentences
+        - Sort the articles by date (latest first)
+        - Include the source URL as a hyperlink
+
+        Format:
+        ### [YYYY-MM-DD]
+        - [Summary](URL)"""),
+            ("user", "Articles:\n{articles}")
+        ])
+
+        articles_str = "\n\n".join([
+            f"Content: {item.get('content', '')}\nURL: {item.get('url', '')}\nDate: {item.get('published_date', '')}"
+            for item in news_item:
+            
+        ])
+        response = self.llm.invoke(prompt_template.format(articles=articles_str))
+        state['summary']=response.content
+        self.state['summary']=state['summary']
+        return self.state
